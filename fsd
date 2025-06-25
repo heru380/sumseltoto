@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Editor's Pick - technologyacts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 40px;
+      background: #fff;
+      color: #000;
+    }
+    .header {
+      background: #0d5ec3;
+      padding: 20px;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .post {
+      margin-bottom: 30px;
+    }
+    .post-title {
+      font-weight: bold;
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+    .post-meta {
+      color: #0066cc;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">Editor's Pick</div>
+
+  <div class="content">
+    <div class="post">
+      <div class="post-title"><a href="#">Here's exactly what you need to do to launch a mobile app</a></div>
+      <div class="post-meta">Uncategorized | January 8, 2025</div>
+    </div>
+    <div class="post">
+      <div class="post-title"><a href="#">Spotify Premium now has 100 million subscribers</a></div>
+      <div class="post-meta">Uncategorized | January 8, 2025</div>
+    </div>
+    <div class="post">
+      <div class="post-title"><a href="#">Hands on: Beats PowerBeats Pro review</a></div>
+      <div class="post-meta">Uncategorized | January 8, 2025</div>
+    </div>
+    <div class="post">
+      <div class="post-title"><a href="#">The Google Nest Hub Max soups up the smart display</a></div>
+      <div class="post-meta">Uncategorized | January 8, 2025</div>
+    </div>
+    <div class="post">
+      <div class="post-title"><a href="#">Amazon’s assistant will also speak Spanish</a></div>
+      <div class="post-meta">Uncategorized | January 8, 2025</div>
+    </div>
+    <div class="post">
+      <div class="post-title"><a href="#">Apple settles chip dispute, changing future of iPhone</a></div>
+      <div class="post-meta">Uncategorized | January 8, 2025</div>
+    </div>
+  </div>
+</body>
+</html>
