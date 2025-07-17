@@ -1,0 +1,158 @@
+<?php
+// === SUMSELTOTO SMART SCANNER v2.0 ===
+// Akurat, tidak tandai file legal, tapi tetap deteksi shell yang nyamar jadi plugin
+
+date_default_timezone_set("Asia/Jakarta");
+
+$scanDir = __DIR__;
+$extAllow = ['php', 'phtml', 'inc', 'txt'];
+$obfuscationLength = 200;
+
+// File hash SHA1 dari plugin WordPress asli yang dikenal (bisa diperluas)
+$trusted_hashes = [
+    // Contoh: UpdraftPlus_Admin.php (hash SHA1 valid)
+    "f8c8cf7d69dc1e4dce7197e5c2b1e7c13d0d2e8d",
+    "d41d8cd98f00b204e9800998ecf8427e", // file kosong
+];
+
+$whitelist_paths = [
+    '/wp-content/plugins/',
+    '/wp-content/themes/',
+    '/wp-includes/',
+];
+
+$patterns = [
+    "eval()" => "/eval\s*\(/",
+    "assert()" => "/assert\s*\(/",
+    "shell_exec()" => "/shell_exec\s*\(/",
+    "system()" => "/system\s*\(/",
+    "passthru()" => "/passthru\s*\(/",
+    "base64_decode()" => "/base64_decode\s*\(/",
+    "gzinflate()" => "/gzinflate\s*\(/",
+    "gzuncompress()" => "/gzuncompress\s*\(/",
+    "str_rot13()" => "/str_rot13\s*\(/",
+    "preg_replace /e" => "/preg_replace\s*\(.*['\"]e['\"]/",
+    "create_function()" => "/create_function\s*\(/",
+    "ob_start()" => "/ob_start\s*\(/",
+    "dynamic_function" => "/\$\w+\s*\(/",
+    "variable_variables" => "/\$\{.*\}/",
+    "input_access" => "/\$_(GET|POST|REQUEST|SERVER|COOKIE)/",
+];
+
+function isWhitelisted($file, $whitelist_paths) {
+    foreach ($whitelist_paths as $safe) {
+        if (strpos(str_replace("\\", "/", $file), $safe) !== false) return true;
+    }
+    return false;
+}
+
+function isTrustedHash($file, $trusted_hashes) {
+    $hash = sha1_file($file);
+    return in_array($hash, $trusted_hashes);
+}
+
+function getCodeSnippets($file, $patterns) {
+    $lines = file($file);
+    $snippets = [];
+    foreach ($lines as $num => $line) {
+        foreach ($patterns as $name => $pattern) {
+            if (preg_match($pattern, $line)) {
+                $snippets[] = "Line " . ($num + 1) . ": " . htmlspecialchars(trim($line));
+                if (count($snippets) >= 3) return $snippets;
+            }
+        }
+    }
+    return $snippets;
+}
+
+function scanFile($file, $patterns, $obfuscationLength, $whitelist_paths, $trusted_hashes) {
+    $content = file_get_contents($file);
+    $matches = [];
+
+    foreach ($patterns as $name => $pattern) {
+        if (preg_match($pattern, $content)) {
+            $matches[] = $name;
+        }
+    }
+
+    $obfuscated = preg_match("/[A-Za-z0-9+/]{" . $obfuscationLength . ",}={0,2}/", $content);
+    $whitelisted = isWhitelisted($file, $whitelist_paths);
+    $trusted = isTrustedHash($file, $trusted_hashes);
+    $score = "LOW";
+
+    if (count($matches) >= 3 || $obfuscated) {
+        if ($whitelisted && !$trusted) {
+            $score = "HIGH (Plugin Modified)";
+        } elseif ($whitelisted && $trusted) {
+            return false; // tidak ditampilkan karena legal & aman
+        } elseif (!$whitelisted) {
+            $score = "HIGH";
+        } else {
+            $score = "MEDIUM";
+        }
+    } else {
+        if ($whitelisted && $trusted) return false;
+        if (!empty($matches) || $obfuscated) $score = "LOW";
+    }
+
+    if (!empty($matches) || $obfuscated) {
+        return [
+            "file" => $file,
+            "size_kb" => round(filesize($file)/1024, 2),
+            "last_modified" => date("Y-m-d H:i:s", filemtime($file)),
+            "patterns" => $matches,
+            "obfuscated" => $obfuscated,
+            "risk" => $score,
+            "snippets" => getCodeSnippets($file, $patterns)
+        ];
+    }
+    return false;
+}
+
+function recursiveScan($dir, $extAllow, $patterns, $obfuscationLength, $whitelist_paths, $trusted_hashes) {
+    $all = [];
+    $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
+    foreach ($rii as $file) {
+        if ($file->isDir()) continue;
+        $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+        if (!in_array($ext, $extAllow)) continue;
+        $result = scanFile($file->getPathname(), $patterns, $obfuscationLength, $whitelist_paths, $trusted_hashes);
+        if ($result) $all[] = $result;
+    }
+    return $all;
+}
+
+$results = recursiveScan($scanDir, $extAllow, $patterns, $obfuscationLength, $whitelist_paths, $trusted_hashes);
+
+echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Scanner v2.0</title>
+<style>
+body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
+.risk-LOW { color: #4CAF50; }
+.risk-MEDIUM { color: #FF9800; }
+.risk-HIGH { color: #F44336; font-weight: bold; }
+pre { background: #222; padding: 10px; border-left: 4px solid #444; margin-bottom: 20px; }
+h2 { color: #00BCD4; }
+</style></head><body>";
+
+echo "<h2>🛡️ SUMSELTOTO SHELL SCANNER v2.0</h2>";
+
+if (empty($results)) {
+    echo "<p style='color:lightgreen;'>✅ Tidak ada file mencurigakan ditemukan.</p>";
+} else {
+    foreach ($results as $res) {
+        echo "<pre>";
+        echo "📄 File        : " . $res['file'] . "\n";
+        echo "📅 Diedit      : " . $res['last_modified'] . "\n";
+        echo "📦 Ukuran      : " . $res['size_kb'] . " KB\n";
+        echo "⚠️  Pola       : " . implode(", ", $res['patterns']) . "\n";
+        echo "🔐 Obfuscated  : " . ($res['obfuscated'] ? "YA" : "TIDAK") . "\n";
+        echo "🔥 Risiko      : <span class='risk-" . preg_replace('/[^A-Z]/', '', $res['risk']) . "'>" . $res['risk'] . "</span>\n";
+        echo "🔎 Cuplikan:\n";
+        foreach ($res['snippets'] as $s) {
+            echo "   → " . $s . "\n";
+        }
+        echo "</pre>";
+    }
+}
+echo "</body></html>";
+?>
